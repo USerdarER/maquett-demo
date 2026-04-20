@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { theme } from "../theme";
 import { buildBasePlatform, buildContourGroup, buildTerrainMesh } from "./terrain";
@@ -7,8 +7,8 @@ import { rebuildBuildingsGroup } from "./buildings";
 import { createLights, updateSun } from "./lighting";
 import { attachCameraControls, type CameraControlsHandle, type CameraRefs } from "./cameraControls";
 import { useEditState } from "../editing/useEditState";
-import { applySelectionHighlight, pickBuildingId } from "../editing/selection";
-import { buildPreviewLoop, pickGroundPoint } from "../editing/drawMode";
+import { applySelectionHighlight } from "../editing/selection";
+import { useSceneInteraction, type SceneInteractionRefs } from "../editing/useSceneInteraction";
 import { DrawHint } from "../ui/DrawHint";
 
 type Props = {
@@ -29,6 +29,7 @@ export function TopoModel({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const canvasRef = useRef<HTMLElement | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const dirLightRef = useRef<THREE.DirectionalLight | null>(null);
   const buildingsGroupRef = useRef<THREE.Group | null>(null);
@@ -40,10 +41,21 @@ export function TopoModel({
   const frameRef = useRef<number | null>(null);
 
   const { state, dispatch } = useEditState();
-  const stateRef = useRef(state);
-  stateRef.current = state;
 
   const [ready, setReady] = useState(false);
+
+  const interactionRefs = useMemo<SceneInteractionRefs>(
+    () => ({
+      domElement: canvasRef,
+      camera: cameraRef,
+      scene: sceneRef,
+      buildingsGroup: buildingsGroupRef,
+      terrainMesh: terrainMeshRef,
+      previewLine: previewLineRef,
+    }),
+    [],
+  );
+  useSceneInteraction(interactionRefs, ready, state, dispatch);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -60,6 +72,7 @@ export function TopoModel({
     renderer.toneMappingExposure = 1.0;
     renderer.setClearColor(theme.sceneClear);
     rendererRef.current = renderer;
+    canvasRef.current = renderer.domElement;
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -92,8 +105,6 @@ export function TopoModel({
     const buildings = new THREE.Group();
     scene.add(buildings);
     buildingsGroupRef.current = buildings;
-    rebuildBuildingsGroup(buildings, stateRef.current.buildings);
-    applySelectionHighlight(buildings, stateRef.current.selectedId);
 
     const camRefs: CameraRefs = {
       theta: Math.PI / 5,
@@ -107,39 +118,6 @@ export function TopoModel({
 
     updateSun(dirLight, 45, 55);
     setReady(true);
-
-    const onClick = (ev: MouseEvent) => {
-      if (ev.button !== 0) return;
-      const current = stateRef.current;
-      if (current.mode === "idle") {
-        const id = pickBuildingId(ev, renderer.domElement, camera, buildings);
-        if (id) dispatch({ type: "select", id });
-        else if (current.selectedId !== null) dispatch({ type: "deselect" });
-      } else if (current.mode === "draw") {
-        if (!terrainMeshRef.current) return;
-        const point = pickGroundPoint(ev, renderer.domElement, camera, terrainMeshRef.current);
-        if (point) dispatch({ type: "addDrawPoint", point });
-      }
-    };
-
-    const onMouseMove = (ev: MouseEvent) => {
-      const current = stateRef.current;
-      if (current.mode !== "draw" || current.drawPoints.length !== 1) return;
-      if (!terrainMeshRef.current) return;
-      const point = pickGroundPoint(ev, renderer.domElement, camera, terrainMeshRef.current);
-      if (!point) return;
-      if (previewLineRef.current) {
-        scene.remove(previewLineRef.current);
-        previewLineRef.current.geometry.dispose();
-        previewLineRef.current = null;
-      }
-      const line = buildPreviewLoop(current.drawPoints[0], point, 0.4);
-      scene.add(line);
-      previewLineRef.current = line;
-    };
-
-    renderer.domElement.addEventListener("click", onClick);
-    renderer.domElement.addEventListener("mousemove", onMouseMove);
 
     const animate = () => {
       frameRef.current = requestAnimationFrame(animate);
@@ -158,8 +136,6 @@ export function TopoModel({
 
     return () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
-      renderer.domElement.removeEventListener("click", onClick);
-      renderer.domElement.removeEventListener("mousemove", onMouseMove);
       controls.dispose();
       window.removeEventListener("resize", onResize);
       if (buildingsGroupRef.current) {
@@ -167,8 +143,9 @@ export function TopoModel({
       }
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
+      canvasRef.current = null;
     };
-  }, [dispatch]);
+  }, []);
 
   useEffect(() => {
     if (buildingsGroupRef.current) buildingsGroupRef.current.visible = showBuildings;

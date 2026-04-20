@@ -73,7 +73,8 @@ None.
 | Polish + type-check clean | Session 1 | ✅ |
 | Engineering audit | 2026-04-20 | ✅ |
 | Phase 1.5 Step 6 — material cache | 2026-04-20 | ✅ |
-| Phase 1.5 Steps 7–8 | TBD | ⏳ |
+| Phase 1.5 Step 7 — scene-interaction hook | 2026-04-20 | ✅ |
+| Phase 1.5 Step 8 | TBD | ⏳ |
 
 ## Weekly Snapshots
 

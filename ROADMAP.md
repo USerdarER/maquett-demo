@@ -90,9 +90,10 @@ Prototype shipped. Engineering audit surfaced three items to address before Phas
 **Why first:** fixes the root fragility that blocks per-building highlight effects (glow, multi-select colors) and eliminates double-dispose risk.
 
 ### Step 7 — Stabilize scene event handlers
-- [ ] Extract click + mousemove handlers from `TopoModel.tsx` into a `useSceneInteraction(sceneRef, state, dispatch)` hook.
-- [ ] Remove the `stateRef.current` escape hatch at `scene/TopoModel.tsx:43`.
-- [ ] Handler closures depend on `[state, dispatch]`; re-bind on change.
+- [x] Extract click + mousemove handlers from `TopoModel.tsx` into a `useSceneInteraction(refs, ready, state, dispatch)` hook (`editing/useSceneInteraction.ts`).
+- [x] Remove the `stateRef.current` escape hatch.
+- [x] Handler closures depend on `[state, dispatch]`; re-bind on change. `ready` gates setup until scene refs populate.
+- [x] `type-check` + `build` clean.
 
 **Why:** the stale-closure pattern works today but is a footgun for anyone adding a new tool mode.
 
