@@ -106,8 +106,8 @@ Prototype shipped. Engineering audit surfaced three items to address before Phas
 **Why:** hygiene; pairs naturally with Step 6.
 
 ### Housekeeping (not coding)
-- [ ] Reconcile `PROGRESS.md` milestones (all ✅).
-- [ ] Prune stale worktree `.claude/worktrees/hardcore-mendeleev-1c624f/` after confirming no in-flight work there.
+- [x] Reconcile `PROGRESS.md` milestones (all ✅).
+- [x] Prune stale worktree `.claude/worktrees/hardcore-mendeleev-1c624f/` after confirming no in-flight work there.
 
 ---
 
