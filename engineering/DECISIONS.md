@@ -98,3 +98,32 @@ Architecture decisions, captured as they happen. Format: what, why, alternatives
 - **Single-level undo** — tempting, but adds UI surface (toolbar button + shortcut + confusion when user expects multi-level).
 
 **Status:** Accepted. 2026-04-19. Add in Phase 2 if users ask.
+
+---
+
+## ADR-008 — Centralize material lifecycle behind a ref-counted cache
+
+**Decision:** In Phase 1.5, route all `MeshStandardMaterial` creation for buildings and selection through a small ref-counted cache keyed by role. Scene builders acquire; `dispose*` helpers release.
+
+**Why:** The Phase 1 shortcut — module-level `selectedMat` + `defaultMat` in `editing/selection.ts` and per-building inline construction in `scene/buildings.ts` — works for ≤30 buildings but (a) never disposes on unmount, (b) makes per-building highlight variants impossible (swap is global-by-reference), and (c) risks double-dispose once any pooling sneaks in. Multi-select, glow, and undo all push against this. Fix before Phase 2.
+
+**Alternatives considered:**
+- **Leave it** — acceptable only if Phase 2 never touches selection visuals. Unlikely.
+- **Clone-per-render** — eliminates pooling concerns but regresses perf and still leaks without explicit disposal.
+- **Move to R3F `<meshStandardMaterial />`** — reopens ADR-002; too big a change for the problem.
+
+**Status:** Accepted. 2026-04-20. Implementation tracked as ROADMAP Step 6.
+
+---
+
+## ADR-009 — Extract scene interaction into a dedicated hook
+
+**Decision:** Move `onClick` / `onMouseMove` handlers out of `scene/TopoModel.tsx` into a `useSceneInteraction(sceneRef, state, dispatch)` hook. Remove the `stateRef.current` escape hatch.
+
+**Why:** Today's click handlers close over `stateRef.current` because they are bound once during scene setup. It works, but every future tool mode (resize, rotate, multi-select) inherits the stale-closure pattern and the obligation to remember it. A hook with `[state, dispatch]` deps re-binds correctly and keeps `TopoModel.tsx` focused on renderer/scene lifecycle.
+
+**Alternatives considered:**
+- **Keep `stateRef`** — zero churn, but the pattern compounds as modes grow.
+- **Event bus / observer** — overkill at this scale; adds indirection without solving the closure problem directly.
+
+**Status:** Accepted. 2026-04-20. Implementation tracked as ROADMAP Step 7.

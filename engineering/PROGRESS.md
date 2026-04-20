@@ -6,7 +6,7 @@ Living tracker. Update weekly.
 
 **Goal:** Render a pre-generated 3D massing site (ported from `topo-model.jsx`) and let the user select, delete, and draw new buildings.
 
-**Status:** Implementation in progress (all Steps 0–5 targeted in initial session).
+**Status:** Phase 1 complete (2026-04-20). Phase 1.5 hardening queued — see `ROADMAP.md` Steps 6–8.
 
 ---
 
@@ -67,18 +67,32 @@ None.
 | Milestone | Target | Status |
 |---|---|---|
 | Scaffold + docs | Session 1 | ✅ |
-| Reference ported | Session 1 | ⏳ |
-| Select/delete working | Session 1 | ⏳ |
-| Draw-new-building working | Session 1 | ⏳ |
-| Polish + type-check clean | Session 1 | ⏳ |
+| Reference ported | Session 1 | ✅ |
+| Select/delete working | Session 1 | ✅ |
+| Draw-new-building working | Session 1 | ✅ |
+| Polish + type-check clean | Session 1 | ✅ |
+| Engineering audit | 2026-04-20 | ✅ |
+| Phase 1.5 Step 6 — material cache | 2026-04-20 | ✅ |
+| Phase 1.5 Steps 7–8 | TBD | ⏳ |
 
 ## Weekly Snapshots
 
-### Week 1 (2026-04-19 →)
+### Week 1 (2026-04-19 → 2026-04-20)
 **Planned:** everything above (one-session prototype).
+**Built:** Phase 1 Steps 0–5 shipped end-to-end. Scene parity with reference, select/delete, two-click draw with floor count, polish.
+**Learnings:**
+- Reducer + `stateRef` bridge to raw-Three click handlers works but reads as a footgun for newcomers. Extracting a `useSceneInteraction` hook is the right next move.
+- Per-building material clones were cheap to ship but hide lifecycle risk (shared `selectedMat` + no disposal on unmount). Centralizing via ref-counted cache keeps future highlight effects open.
+- Preview line material survives cleanup — easy miss, easy fix.
+- Docs/code consistency held up well across the session; `DECISIONS.md` ADRs captured every non-trivial fork.
+
+**Next:** Phase 1.5 hardening (ROADMAP Steps 6–8), then decide Phase 2 direction.
+
+### Week 2 (2026-04-20 →)
+**Planned:** Phase 1.5 — material cache, scene-interaction hook, preview disposal.
 **Built:** (update at session end).
 **Learnings:** (fill in).
-**Next:** decide if this prototype becomes the foundation for image-upload + AI phases, or stays as a reference artifact.
+**Next:** pick first Phase 2 candidate.
 
 ---
 

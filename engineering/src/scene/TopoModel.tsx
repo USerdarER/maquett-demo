@@ -162,6 +162,9 @@ export function TopoModel({
       renderer.domElement.removeEventListener("mousemove", onMouseMove);
       controls.dispose();
       window.removeEventListener("resize", onResize);
+      if (buildingsGroupRef.current) {
+        rebuildBuildingsGroup(buildingsGroupRef.current, []);
+      }
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
     };

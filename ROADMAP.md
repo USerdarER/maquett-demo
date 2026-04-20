@@ -72,3 +72,51 @@ cd engineering && npm run dev    # http://localhost:5173
 6. Draw → 2 clicks → new building appears at correct terrain height.
 7. Esc cancels mid-draw.
 8. `npm run type-check` clean; `npm run build` succeeds.
+
+---
+
+## Phase 1.5 — Hardening (post-audit, 2026-04-20)
+
+Prototype shipped. Engineering audit surfaced three items to address before Phase 2 features (multi-select, undo, export) land. Each is small and ordered by leverage.
+
+### Step 6 — Centralize material lifecycle
+- [x] Introduce a ref-counted material cache keyed by role (`default`, `selected`). `preview` deferred to Step 8 (LineBasicMaterial).
+- [x] `buildBuildingGroup` acquires from the cache instead of constructing `MeshStandardMaterial` inline (`scene/buildings.ts`).
+- [x] `disposeBuildingGroup` releases by role via ref count (`scene/buildings.ts`).
+- [x] `applySelectionHighlight` transitions roles via acquire/release; module-level singletons removed (`editing/selection.ts`).
+- [x] Unmount cleanup in `TopoModel.tsx` disposes the building group so cache counts settle to zero.
+- [x] `type-check` + `build` clean.
+
+**Why first:** fixes the root fragility that blocks per-building highlight effects (glow, multi-select colors) and eliminates double-dispose risk.
+
+### Step 7 — Stabilize scene event handlers
+- [ ] Extract click + mousemove handlers from `TopoModel.tsx` into a `useSceneInteraction(sceneRef, state, dispatch)` hook.
+- [ ] Remove the `stateRef.current` escape hatch at `scene/TopoModel.tsx:43`.
+- [ ] Handler closures depend on `[state, dispatch]`; re-bind on change.
+
+**Why:** the stale-closure pattern works today but is a footgun for anyone adding a new tool mode.
+
+### Step 8 — Tighten preview disposal
+- [ ] `disposePreview` also calls `line.material.dispose()` (`scene/TopoModel.tsx:131`).
+- [ ] Unmount cleanup covers the preview line path (`scene/TopoModel.tsx:207`).
+
+**Why:** hygiene; pairs naturally with Step 6.
+
+### Housekeeping (not coding)
+- [ ] Reconcile `PROGRESS.md` milestones (all ✅).
+- [ ] Prune stale worktree `.claude/worktrees/hardcore-mendeleev-1c624f/` after confirming no in-flight work there.
+
+---
+
+## Phase 2 candidates (not scheduled)
+
+Surfaced by audit + original scope doc. Pick from here once Phase 1.5 lands.
+
+- Multi-select (shift-click, marquee).
+- Undo stack (command-pattern reducer).
+- Edit existing building (resize, move, floor count).
+- Polygonal / rotated footprints.
+- Image upload → terrain generation (joins the sibling Mapbox track).
+- Export (OBJ / STL / DXF / PNG).
+- AI edit assistant.
+- TS path aliases (`@/scene`, `@/editing`) once import depth hurts.

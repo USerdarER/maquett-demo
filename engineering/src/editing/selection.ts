@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { theme } from "../theme";
+import { acquireMaterial, releaseMaterial, type MatRole } from "../scene/materialCache";
 
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
@@ -27,18 +27,6 @@ export function pickBuildingId(
   return null;
 }
 
-const selectedMat = new THREE.MeshStandardMaterial({
-  color: theme.buildingSelected,
-  roughness: 0.5,
-  metalness: 0.0,
-});
-
-const defaultMat = new THREE.MeshStandardMaterial({
-  color: theme.building,
-  roughness: 0.6,
-  metalness: 0.0,
-});
-
 export function applySelectionHighlight(
   buildingsGroup: THREE.Group,
   selectedId: string | null,
@@ -47,9 +35,20 @@ export function applySelectionHighlight(
     if (!(child instanceof THREE.Group)) continue;
     const id = child.userData.buildingId as string | undefined;
     const isSelected = id !== undefined && id === selectedId;
+    const newRole: MatRole = isSelected ? "selected" : "default";
+    const oldRole = child.userData.materialRole as MatRole | undefined;
+    if (oldRole === newRole) continue;
+
+    const newMat = acquireMaterial(newRole);
+    if (oldRole) releaseMaterial(oldRole);
+    child.userData.materialRole = newRole;
+
     for (const part of child.children) {
-      if (part instanceof THREE.Mesh && (part.userData.role === "mainBox" || part.userData.role === "roof")) {
-        part.material = isSelected ? selectedMat : defaultMat;
+      if (
+        part instanceof THREE.Mesh &&
+        (part.userData.role === "mainBox" || part.userData.role === "roof")
+      ) {
+        part.material = newMat;
       }
     }
   }

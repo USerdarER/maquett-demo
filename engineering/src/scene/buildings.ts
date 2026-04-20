@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { getHeight } from "./terrain";
 import { theme } from "../theme";
+import { acquireMaterial, releaseMaterial, type MatRole } from "./materialCache";
 
 export type Building = {
   id: string;
@@ -44,15 +45,12 @@ export function seedBuildings(): Building[] {
 export function buildBuildingGroup(b: Building): THREE.Group {
   const group = new THREE.Group();
   group.userData.buildingId = b.id;
+  group.userData.materialRole = "default" satisfies MatRole;
 
   const h = b.floors * FLOOR_HEIGHT;
   const baseY = getHeight(b.x, b.z);
 
-  const mat = new THREE.MeshStandardMaterial({
-    color: theme.building,
-    roughness: 0.6,
-    metalness: 0.0,
-  });
+  const mat = acquireMaterial("default");
 
   const box = new THREE.Mesh(new THREE.BoxGeometry(b.w, h, b.d), mat);
   box.position.set(b.x, baseY + h / 2, b.z);
@@ -92,11 +90,6 @@ export function disposeBuildingGroup(group: THREE.Group): void {
   group.traverse((obj) => {
     if (obj instanceof THREE.Mesh) {
       obj.geometry.dispose();
-      if (Array.isArray(obj.material)) {
-        obj.material.forEach((m) => m.dispose());
-      } else {
-        obj.material.dispose();
-      }
     } else if (obj instanceof THREE.Line) {
       obj.geometry.dispose();
       if (Array.isArray(obj.material)) {
@@ -106,6 +99,8 @@ export function disposeBuildingGroup(group: THREE.Group): void {
       }
     }
   });
+  const role = group.userData.materialRole as MatRole | undefined;
+  if (role) releaseMaterial(role);
 }
 
 export function rebuildBuildingsGroup(
