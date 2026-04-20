@@ -1,3 +1,4 @@
+import type { MutableRefObject } from "react";
 import * as THREE from "three";
 import { theme } from "../theme";
 import type { Vec2 } from "./useEditState";
@@ -30,8 +31,6 @@ export function buildFootprintFromTwoPoints(p1: Vec2, p2: Vec2): { x: number; z:
   };
 }
 
-const previewMat = new THREE.LineBasicMaterial({ color: theme.warmAccent });
-
 export function buildPreviewLoop(p1: Vec2, p2: Vec2, yOffset: number): THREE.Line {
   const [x, z, w, d] = [
     (p1[0] + p2[0]) / 2,
@@ -49,10 +48,22 @@ export function buildPreviewLoop(p1: Vec2, p2: Vec2, yOffset: number): THREE.Lin
     new THREE.Vector3(x - hw, yOffset, z - hd),
   ];
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
-  return new THREE.Line(geo, previewMat);
+  const mat = new THREE.LineBasicMaterial({ color: theme.warmAccent });
+  return new THREE.Line(geo, mat);
 }
 
 export function disposePreview(line: THREE.Line | null): void {
   if (!line) return;
   line.geometry.dispose();
+  (line.material as THREE.Material).dispose();
+}
+
+export function clearPreview(
+  scene: THREE.Scene,
+  ref: MutableRefObject<THREE.Line | null>,
+): void {
+  if (!ref.current) return;
+  scene.remove(ref.current);
+  disposePreview(ref.current);
+  ref.current = null;
 }

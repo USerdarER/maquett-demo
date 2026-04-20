@@ -2,7 +2,7 @@ import { useEffect, type Dispatch, type RefObject, type MutableRefObject } from 
 import * as THREE from "three";
 import type { EditAction, EditState } from "./useEditState";
 import { pickBuildingId } from "./selection";
-import { buildPreviewLoop, pickGroundPoint } from "./drawMode";
+import { buildPreviewLoop, clearPreview, pickGroundPoint } from "./drawMode";
 
 export type SceneInteractionRefs = {
   domElement: RefObject<HTMLElement | null>;
@@ -44,11 +44,7 @@ export function useSceneInteraction(
       if (state.mode !== "draw" || state.drawPoints.length !== 1) return;
       const point = pickGroundPoint(ev, domElement, camera, terrainMesh);
       if (!point) return;
-      if (refs.previewLine.current) {
-        scene.remove(refs.previewLine.current);
-        refs.previewLine.current.geometry.dispose();
-        refs.previewLine.current = null;
-      }
+      clearPreview(scene, refs.previewLine);
       const line = buildPreviewLoop(state.drawPoints[0], point, 0.4);
       scene.add(line);
       refs.previewLine.current = line;

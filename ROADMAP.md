@@ -98,8 +98,10 @@ Prototype shipped. Engineering audit surfaced three items to address before Phas
 **Why:** the stale-closure pattern works today but is a footgun for anyone adding a new tool mode.
 
 ### Step 8 — Tighten preview disposal
-- [ ] `disposePreview` also calls `line.material.dispose()` (`scene/TopoModel.tsx:131`).
-- [ ] Unmount cleanup covers the preview line path (`scene/TopoModel.tsx:207`).
+- [x] `disposePreview` also calls `line.material.dispose()`; preview material is now per-line (`editing/drawMode.ts`).
+- [x] New `clearPreview(scene, ref)` helper routes all three disposal sites through one path (`editing/drawMode.ts`).
+- [x] Unmount cleanup covers the preview line path (`scene/TopoModel.tsx`).
+- [x] `type-check` + `build` clean.
 
 **Why:** hygiene; pairs naturally with Step 6.
 

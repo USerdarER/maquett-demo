@@ -8,6 +8,7 @@ import { createLights, updateSun } from "./lighting";
 import { attachCameraControls, type CameraControlsHandle, type CameraRefs } from "./cameraControls";
 import { useEditState } from "../editing/useEditState";
 import { applySelectionHighlight } from "../editing/selection";
+import { clearPreview } from "../editing/drawMode";
 import { useSceneInteraction, type SceneInteractionRefs } from "../editing/useSceneInteraction";
 import { DrawHint } from "../ui/DrawHint";
 
@@ -138,6 +139,7 @@ export function TopoModel({
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
       controls.dispose();
       window.removeEventListener("resize", onResize);
+      clearPreview(scene, previewLineRef);
       if (buildingsGroupRef.current) {
         rebuildBuildingsGroup(buildingsGroupRef.current, []);
       }
@@ -184,11 +186,7 @@ export function TopoModel({
     const scene = sceneRef.current;
     if (!scene) return;
     if (state.mode !== "draw" || state.drawPoints.length === 0) {
-      if (previewLineRef.current) {
-        scene.remove(previewLineRef.current);
-        previewLineRef.current.geometry.dispose();
-        previewLineRef.current = null;
-      }
+      clearPreview(scene, previewLineRef);
     }
   }, [state.mode, state.drawPoints]);
 
